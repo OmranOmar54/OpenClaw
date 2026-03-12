@@ -1316,6 +1316,12 @@ const proxy = httpProxy.createProxyServer({
   xfwd: true,
 });
 
+proxy.on("proxyReq", (proxyReq, _req) => {
+  if (OPENCLAW_GATEWAY_TOKEN) {
+    proxyReq.setHeader("Authorization", `Bearer ${OPENCLAW_GATEWAY_TOKEN}`);
+  }
+});
+
 proxy.on("error", (err, _req, res) => {
   console.error("[proxy]", err);
   try {
@@ -1361,8 +1367,10 @@ function attachGatewayAuthHeader(req) {
   }
 }
 
-proxy.on("proxyReqWs", (_proxyReq, req) => {
-  attachGatewayAuthHeader(req);
+proxy.on("proxyReqWs", (proxyReq, _req) => {
+  if (OPENCLAW_GATEWAY_TOKEN) {
+    proxyReq.setHeader("Authorization", `Bearer ${OPENCLAW_GATEWAY_TOKEN}`);
+  }
 });
 
 app.use(requireDashboardAuth, async (req, res) => {
