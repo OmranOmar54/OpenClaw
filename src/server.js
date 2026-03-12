@@ -1316,12 +1316,6 @@ const proxy = httpProxy.createProxyServer({
   xfwd: true,
 });
 
-proxy.on("proxyReq", (proxyReq, _req) => {
-  if (OPENCLAW_GATEWAY_TOKEN) {
-    proxyReq.setHeader("Authorization", `Bearer ${OPENCLAW_GATEWAY_TOKEN}`);
-  }
-});
-
 proxy.on("error", (err, _req, res) => {
   console.error("[proxy]", err);
   try {
@@ -1362,15 +1356,13 @@ function requireDashboardAuth(req, res, next) {
 // cannot set custom Authorization headers for WebSocket connections, so we inject
 // the token into proxied requests at the wrapper level.
 function attachGatewayAuthHeader(req) {
-  if (OPENCLAW_GATEWAY_TOKEN) {
+  if (!req?.headers?.authorization && OPENCLAW_GATEWAY_TOKEN) {
     req.headers.authorization = `Bearer ${OPENCLAW_GATEWAY_TOKEN}`;
   }
 }
 
-proxy.on("proxyReqWs", (proxyReq, _req) => {
-  if (OPENCLAW_GATEWAY_TOKEN) {
-    proxyReq.setHeader("Authorization", `Bearer ${OPENCLAW_GATEWAY_TOKEN}`);
-  }
+proxy.on("proxyReqWs", (_proxyReq, req) => {
+  attachGatewayAuthHeader(req);
 });
 
 app.use(requireDashboardAuth, async (req, res) => {
